@@ -74,5 +74,22 @@ const Utils = (() => {
     return new Date().toISOString().slice(0, 10);
   }
 
-  return { fmtMoney, fmtQty, toMonthLabel, groupByMonth, totalByCurrency, groupByAsset, today };
+  /* ── 수익 계산 ────────────────────────────────── */
+  // asset: { qty, totalAmt, currency }
+  // priceInfo: { price, currency } | null
+  function calcProfit(asset, priceInfo) {
+    if (!priceInfo) return null;
+    const currentVal = asset.qty * priceInfo.price;
+    const profit     = currentVal - asset.totalAmt;
+    const rate       = asset.totalAmt > 0 ? (profit / asset.totalAmt) * 100 : 0;
+    return { currentVal, profit, rate };
+  }
+
+  /* ── 수익률 포맷 (+12.34% / -5.67%) ──────────── */
+  function fmtRate(rate) {
+    const sign = rate >= 0 ? '+' : '';
+    return `${sign}${rate.toFixed(2)}%`;
+  }
+
+  return { fmtMoney, fmtQty, toMonthLabel, groupByMonth, totalByCurrency, groupByAsset, today, calcProfit, fmtRate };
 })();

@@ -15,15 +15,12 @@
     <div class="header-sub">월적립 투자 기록 — 정적 사이트</div>
   </div>
   <div class="header-actions">
-    <button class="btn btn-ghost"  onclick="IO.triggerImport()">📂 불러오기</button>
-    <button class="btn btn-ghost"  onclick="IO.exportJSON()">💾 내보내기</button>
-    <button class="btn btn-accent" onclick="UI.openModal()">＋ 매수 기록</button>
+    <button class="btn btn-ghost"   onclick="IO.triggerImport()">📂 불러오기</button>
+    <button class="btn btn-ghost"   onclick="IO.exportJSON()">💾 내보내기</button>
+    <button class="btn btn-accent"  onclick="UI.openModal()">＋ 매수 기록</button>
   </div>
 </header>
-
-<!-- 파일 입력 (숨김) -->
-<input type="file" id="importFile" accept=".json" style="display:none"
-       onchange="IO.handleImport(event)"/>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="IO.handleImport(event)"/>
 
 <!-- ── MAIN ───────────────────────────────────── -->
 <main>
@@ -69,30 +66,37 @@
   <!-- 종목별 요약 -->
   <div id="tab-assets" style="display:none">
     <div class="section-header">
-      <div class="section-title">종목별 <span>보유</span> 요약</div>
+      <div class="section-title">종목별 <span>수익</span> 현황</div>
+      <button class="btn btn-accent2" id="btnFetchPrices" onclick="App.fetchPrices()">🔄 현재가 조회</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>종목</th><th>티커</th><th>증권사</th>
-            <th class="num">총 수량</th><th class="num">평균 단가</th>
-            <th class="num">총 투자금</th><th class="num">매수 횟수</th>
+            <th class="num">총 수량</th>
+            <th class="num">평균 단가</th>
+            <th class="num">총 투자금</th>
+            <th class="num">현재가</th>
+            <th class="num">평가금액</th>
+            <th class="num">손익</th>
+            <th class="num">수익률</th>
+            <th class="num">횟수</th>
           </tr>
         </thead>
         <tbody id="assetTableBody"></tbody>
       </table>
     </div>
+    <p class="price-note">🔄 Yahoo Finance 자동조회 · ✏️ 수동 입력 · 가격은 5분 캐시됩니다</p>
   </div>
 
 </main>
 
-<!-- ── ADD MODAL ──────────────────────────────── -->
+<!-- ── 매수 기록 추가/수정 모달 ───────────────── -->
 <div class="modal-overlay" id="modalOverlay" onclick="UI.closeModalOutside(event)">
   <div class="modal">
-    <div class="modal-title">매수 <span>기록</span> 추가</div>
+    <div class="modal-title" id="modalTitle">매수 기록 <span>추가</span></div>
     <div class="form-grid">
-
       <div class="form-row">
         <div class="field">
           <label>매수일 *</label>
@@ -103,7 +107,6 @@
           <input type="text" id="f-broker" placeholder="예) 토스증권, 키움"/>
         </div>
       </div>
-
       <div class="form-row">
         <div class="field">
           <label>종목명 *</label>
@@ -111,10 +114,9 @@
         </div>
         <div class="field">
           <label>티커 / 코드 *</label>
-          <input type="text" id="f-ticker" placeholder="예) SPY, 069500"/>
+          <input type="text" id="f-ticker" placeholder="예) SPY, QQQ"/>
         </div>
       </div>
-
       <div class="form-row">
         <div class="field">
           <label>통화</label>
@@ -125,7 +127,6 @@
           <input type="number" id="f-price" placeholder="0" min="0" step="any"/>
         </div>
       </div>
-
       <div class="form-row">
         <div class="field">
           <label>수량 *</label>
@@ -136,12 +137,10 @@
           <input type="number" id="f-fee" placeholder="0" min="0" step="any"/>
         </div>
       </div>
-
       <div class="field">
         <label>메모 (선택)</label>
         <input type="text" id="f-memo" placeholder="자유롭게 입력"/>
       </div>
-
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost"  onclick="UI.closeModal()">취소</button>
@@ -150,13 +149,41 @@
   </div>
 </div>
 
+<!-- ── 수동 가격 입력 모달 ────────────────────── -->
+<div class="modal-overlay" id="manualPriceOverlay" onclick="UI.closeManualOutside(event)">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-title">현재가 <span>수동 입력</span></div>
+    <div class="form-grid">
+      <div class="field">
+        <label>티커</label>
+        <input type="text" id="mp-ticker" readonly style="opacity:.6"/>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>통화</label>
+          <select id="mp-currency"></select>
+        </div>
+        <div class="field">
+          <label>현재가 *</label>
+          <input type="number" id="mp-price" placeholder="0" min="0" step="any"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost"  onclick="UI.closeManualPriceModal()">취소</button>
+      <button class="btn btn-accent" onclick="App.saveManualPrice()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── TOAST ──────────────────────────────────── -->
 <div class="toast" id="toast"></div>
 
-<!-- ── SCRIPTS (의존성 순서대로) ──────────────── -->
+<!-- ── SCRIPTS ────────────────────────────────── -->
 <script src="js/config.js"></script>
 <script src="js/store.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/price.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/io.js"></script>
 <script src="js/app.js"></script>

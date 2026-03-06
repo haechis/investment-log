@@ -33,6 +33,18 @@ const Store = (() => {
     save();
   }
 
+  function update(id, fields) {
+    const idx = _records.findIndex(r => r.id === id);
+    if (idx === -1) return false;
+    _records[idx] = { ..._records[idx], ...fields, updatedAt: new Date().toISOString() };
+    save();
+    return true;
+  }
+
+  function getById(id) {
+    return _records.find(r => r.id === id) || null;
+  }
+
   /** 외부에서 가져온 records 배열을 머지 (중복 id 스킵) */
   function merge(incoming) {
     const existing = new Set(_records.map(r => r.id));
@@ -57,5 +69,5 @@ const Store = (() => {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
-  return { load, getAll, add, remove, merge, replace, generateId };
+  return { load, getAll, add, remove, update, getById, merge, replace, generateId };
 })();
