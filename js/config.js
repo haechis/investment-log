@@ -9,12 +9,7 @@ const CONFIG = {
   EXPORT_VERSION: 1,
   APP_NAME: 'portfolio-log',
 
-  // Yahoo Finance CORS 우회 프록시 (무료, 오픈소스)
-  // 장애 시 아래 목록에서 순서대로 fallback
-  YAHOO_PROXIES: [
-    'https://query1.finance.yahoo.com/v8/finance/chart/',
-    'https://query2.finance.yahoo.com/v8/finance/chart/',
-  ],
+  // Yahoo Finance는 price.js 내부에서 프록시로만 호출 (직접 호출 없음)
 
   // 가격 캐시 유효 시간 (ms) — 기본 5분
   PRICE_CACHE_TTL: 5 * 60 * 1000,
